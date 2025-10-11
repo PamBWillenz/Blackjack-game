@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_11_154346) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_11_165051) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -37,6 +37,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_11_154346) do
     t.boolean "is_dealer"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "standing"
     t.index ["game_id"], name: "index_players_on_game_id"
   end
 
