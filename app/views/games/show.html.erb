@@ -1,0 +1,16 @@
+<h1>Blackjack Game</h1>
+<p>Game ID: <%= @game.id %></p>
+
+<% @game.players.each do |player| %>
+<h2><%= player.is_dealer ? "Dealer" : player.name %></h2>
+<ul>
+  <% player.cards.each do |card| %>
+  <li><%= card.rank %> of <%= card.suit %></li>
+  <% end %>
+</ul>
+<p>Hand Value: <%= player.hand_value %></p>
+<% unless player.is_dealer || player.standing %>
+<%= button_to "Hit", hit_game_path(@game, player_id: player.id), method: :post %>
+<%= button_to "Stand", stand_game_path(@game, player_id: player.id), method: :post %>
+<% end %>
+<% end %>

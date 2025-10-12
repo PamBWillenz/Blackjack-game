@@ -1,0 +1,8 @@
+<h1>Start a New Blackjack Game</h1>
+<%= form_with model: @game, url: games_path, local: true do |form| %>
+<div>
+  <%= form.label :number_of_players, "Number of Players" %>
+  <%= form.number_field :number_of_players, min: 1, max: 7, value: 1 %>
+</div>
+<%= form.submit "Create Game" %>
+<% end %>

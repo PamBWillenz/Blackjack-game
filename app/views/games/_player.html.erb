@@ -1,0 +1,7 @@
+<h2><%= player.is_dealer ? "Dealer" : player.name %></h2>
+<ul>
+  <% player.cards.each do |card| %>
+  <li><%= card.rank %> of <%= card.suit %></li>
+  <% end %>
+</ul>
+<p>Hand Value: <%= player.hand_value %></p>
