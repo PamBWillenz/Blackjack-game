@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>BlackjackGame</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <%= csrf_meta_tags %>
-    <%= csp_meta_tag %>
 
-    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-    <%= javascript_importmap_tags %>
-  </head>
+<head>
+  <title>BlackjackGame</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_importmap_tags %>
+</head>
 
-  <body>
+<body>
+  <main class="min-h-screen w-full flex flex-col items-center justify-center bg-green-900 px-2 sm:px-5 py-4">
     <%= yield %>
-  </body>
+  </main>
+</body>
+
 </html>

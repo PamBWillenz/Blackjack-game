@@ -6,21 +6,33 @@ class Game < ApplicationRecord
 	SUITS = %w[Hearts Diamonds Clubs Spades]
 	RANKS = %w[2 3 4 5 6 7 8 9 10 J Q K A]
 
-	# Deals two cards to each player and the dealer
-	def deal_initial_cards
-		deck = build_deck.shuffle
-		dealer = players.find_by(is_dealer: true)
-		# Deal two face up cards to each player except dealer
-		players.where(is_dealer: false).each do |player|
-			2.times do
-				card_data = deck.pop
-				cards.create!(suit: card_data[:suit], rank: card_data[:rank], value: nil, player: player, face_up: true)
+		# Deals two cards to each player and the dealer
+		def deal_initial_cards
+			deck = build_deck.shuffle
+			dealer = players.find_by(is_dealer: true)
+			# Deal two face up cards to each player except dealer
+			players.where(is_dealer: false).each do |player|
+				2.times do
+					card_data = deck.pop
+					cards.create!(suit: card_data[:suit], rank: card_data[:rank], value: nil, player: player, face_up: true)
+				end
 			end
+			# Dealer gets one card face up, one face down
+			cards.create!(suit: deck.pop[:suit], rank: deck.pop[:rank], value: nil, player: dealer, face_up: true)
+			cards.create!(suit: deck.pop[:suit], rank: deck.pop[:rank], value: nil, player: dealer, face_up: false)
 		end
-		# Dealer gets one card face up, one face down
-		cards.create!(suit: deck.pop[:suit], rank: deck.pop[:rank], value: nil, player: dealer, face_up: true)
-		cards.create!(suit: deck.pop[:suit], rank: deck.pop[:rank], value: nil, player: dealer, face_up: false)
-	end
+
+		# Automates dealer's play: reveal face-down card, hit until hand value >= 17, then stand
+		def dealer_play
+			dealer = players.find_by(is_dealer: true)
+			# Reveal dealer's face-down card
+			dealer.cards.where(face_up: false).update_all(face_up: true)
+			# Dealer hits until hand value >= 17
+			while dealer.hand_value < 17
+				hit(dealer)
+			end
+			stand(dealer)
+		end
 
 	# Deals one card to the specified player
 	def hit(player)
@@ -46,7 +58,7 @@ class Game < ApplicationRecord
 		player.hand_value == 21 && player.cards.count == 2
 	end
 
-  # Marks the player as standing (no more cards)
+	# Marks the player as standing (no more cards)
 	def stand(player)
 		player.update(standing: true)
 	end
@@ -58,4 +70,3 @@ class Game < ApplicationRecord
 		SUITS.product(RANKS).map { |suit, rank| { suit: suit, rank: rank } }
 	end
 end
-

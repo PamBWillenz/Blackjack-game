@@ -1,31 +1,54 @@
-<h1>Blackjack Game</h1>
-<p>Game ID: <%= @game.id %></p>
+<div id="game-container" class="game-container">
+  <h1 class="game-heading">Blackjack Game</h1>
+  <p class="text-lg text-white mb-6 text-center">Game ID: <%= @game.id %></p>
 
-<div style="margin-top: 2em;">
-  <h2>Place Your Bet</h2>
-  <% @game.players.where(is_dealer: false).each do |player| %>
-  <div>
-    <strong><%= player.name %>:</strong>
-    <% [5, 10, 25, 50, 100].each do |amount| %>
-    <%= button_to amount, '#', method: :get, class: 'chip' %>
+  <div id="betting-section" class="mb-8">
+    <h2 class="text-2xl font-semibold text-yellow-300 mb-4 text-center">Place Your Bet</h2>
+    <% @game.players.where(is_dealer: false).each do |player| %>
+    <div class="mb-4 flex flex-col items-center">
+      <span class="text-lg font-bold text-white mb-2"><%= player.name %></span>
+      <div class="flex gap-4 mb-2">
+        <% [5, 10, 25, 50, 100].each do |amount| %>
+        <%= button_to amount, '#', method: :get, class: "chip" %>
+        <% end %>
+      </div>
+    </div>
+    <% end %>
+    <div class="flex justify-center mt-4">
+      <%= button_to "Deal Cards", deal_game_path(@game), method: :post, class: "btn-deal" %>
+    </div>
+  </div>
+
+  <% if @game.cards.any? %>
+  <% @game.players.each do |player| %>
+  <div class="player-card">
+    <h2 class="player-name"><%= player.is_dealer ? "Dealer" : player.name %></h2>
+    <div class="flex gap-2 mb-2">
+      <% player.cards.each do |card| %>
+      <% if player.is_dealer && !card.face_up %>
+      <div class="w-14 h-20 bg-gray-800 rounded-lg shadow flex items-center justify-center text-2xl font-bold text-white border-2 border-gray-600">
+        <span>🂠</span>
+      </div>
+      <% else %>
+      <div class="w-14 h-20 bg-white rounded-lg shadow flex flex-col items-center justify-center text-2xl font-bold border-2 border-gray-400">
+        <span class="block"><%= card.rank %></span>
+        <span class="block text-lg">
+          <% if card.suit == 'Hearts' %>♥️<% elsif card.suit == 'Diamonds' %>♦️<% elsif card.suit == 'Clubs' %>♣️<% elsif card.suit == 'Spades' %>♠️<% end %>
+        </span>
+      </div>
+      <% end %>
+      <% end %>
+    </div>
+    <p class="hand-value">Hand Value: <span class="font-bold"><%= player.hand_value %></span></p>
+    <% if @game.bust?(player) %>
+    <p class="bust">Bust!</p>
+    <% end %>
+    <% unless player.is_dealer || player.standing %>
+    <div class="flex gap-4 mt-2">
+      <%= button_to "Hit", hit_game_path(@game, player_id: player.id), method: :post, class: "btn-action btn-hit" %>
+      <%= button_to "Stand", stand_game_path(@game, player_id: player.id), method: :post, class: "btn-action btn-stand" %>
+    </div>
     <% end %>
   </div>
   <% end %>
-  <%= button_to "Deal Cards", deal_game_path(@game), method: :post %>
-</div>
-
-<% if @game.cards.any? %>
-<% @game.players.each do |player| %>
-<h2><%= player.is_dealer ? "Dealer" : player.name %></h2>
-<ul>
-  <% player.cards.each do |card| %>
-  <li><%= card.rank %> of <%= card.suit %></li>
   <% end %>
-</ul>
-<p>Hand Value: <%= player.hand_value %></p>
-<% unless player.is_dealer || player.standing %>
-<%= button_to "Hit", hit_game_path(@game, player_id: player.id), method: :post %>
-<%= button_to "Stand", stand_game_path(@game, player_id: player.id), method: :post %>
-<% end %>
-<% end %>
-<% end %>
