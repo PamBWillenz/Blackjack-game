@@ -1,8 +1,6 @@
-/* stylelint-disable unknownAtRules */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 
 @layer components {
   .chip {
@@ -39,10 +37,12 @@
     @apply text-lg text-red-400 font-bold;
   }
   /* Additional semantic classes for Blackjack game UI */
-  #game-id, .game-id {
+  #game-id,
+  .game-id {
     @apply text-lg text-white mb-6 text-center;
   }
-  #betting-title, .betting-title {
+  #betting-title,
+  .betting-title {
     @apply text-2xl font-semibold text-yellow-300 mb-4 text-center;
   }
   .player-bet-container {
