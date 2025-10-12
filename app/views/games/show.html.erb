@@ -1,6 +1,20 @@
 <h1>Blackjack Game</h1>
 <p>Game ID: <%= @game.id %></p>
 
+<div style="margin-top: 2em;">
+  <h2>Place Your Bet</h2>
+  <% @game.players.where(is_dealer: false).each do |player| %>
+  <div>
+    <strong><%= player.name %>:</strong>
+    <% [5, 10, 25, 50, 100].each do |amount| %>
+    <%= button_to amount, '#', method: :get, class: 'chip' %>
+    <% end %>
+  </div>
+  <% end %>
+  <%= button_to "Deal Cards", deal_game_path(@game), method: :post %>
+</div>
+
+<% if @game.cards.any? %>
 <% @game.players.each do |player| %>
 <h2><%= player.is_dealer ? "Dealer" : player.name %></h2>
 <ul>
@@ -12,5 +26,6 @@
 <% unless player.is_dealer || player.standing %>
 <%= button_to "Hit", hit_game_path(@game, player_id: player.id), method: :post %>
 <%= button_to "Stand", stand_game_path(@game, player_id: player.id), method: :post %>
+<% end %>
 <% end %>
 <% end %>

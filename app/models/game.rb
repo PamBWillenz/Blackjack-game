@@ -9,20 +9,17 @@ class Game < ApplicationRecord
 	# Deals two cards to each player and the dealer
 	def deal_initial_cards
 		deck = build_deck.shuffle
-		players.each do |player|
-			2.times do
-				card_data = deck.pop
-				cards.create!(suit: card_data[:suit], rank: card_data[:rank], value: nil, player: player)
-			end
-		end
-		# Dealer is a player with is_dealer: true
 		dealer = players.find_by(is_dealer: true)
-		if dealer
+		# Deal two face up cards to each player except dealer
+		players.where(is_dealer: false).each do |player|
 			2.times do
 				card_data = deck.pop
-				cards.create!(suit: card_data[:suit], rank: card_data[:rank], value: nil, player: dealer)
+				cards.create!(suit: card_data[:suit], rank: card_data[:rank], value: nil, player: player, face_up: true)
 			end
 		end
+		# Dealer gets one card face up, one face down
+		cards.create!(suit: deck.pop[:suit], rank: deck.pop[:rank], value: nil, player: dealer, face_up: true)
+		cards.create!(suit: deck.pop[:suit], rank: deck.pop[:rank], value: nil, player: dealer, face_up: false)
 	end
 
 	# Deals one card to the specified player
@@ -61,3 +58,4 @@ class Game < ApplicationRecord
 		SUITS.product(RANKS).map { |suit, rank| { suit: suit, rank: rank } }
 	end
 end
+
