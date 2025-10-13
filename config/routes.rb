@@ -15,4 +15,7 @@ Rails.application.routes.draw do
       post :stand
     end
   end
+    resources :players, only: [] do
+      post :bet, on: :member
+    end
 end

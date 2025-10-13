@@ -22,7 +22,8 @@ class GamesController < ApplicationController
 
 	def deal
 		@game = Game.find(params[:id])
-		@game.deal_initial_cards
+		# Prevent dealing after the round is over
+		@game.deal_initial_cards unless @game.game_over?
 		redirect_to @game
 	end
 
@@ -47,7 +48,8 @@ class GamesController < ApplicationController
 		def players_done?
 			# Check if all non-dealer players are done
 			if @game.players.where(is_dealer: false).all? { |p| p.standing || @game.bust?(p) }
-				@game.dealer_play
+				# Only trigger dealer_play if the game hasn't already been completed
+				@game.dealer_play unless @game.game_over?
 			end
 			redirect_to @game
 		end

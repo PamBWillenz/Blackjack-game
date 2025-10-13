@@ -9,6 +9,10 @@
   .btn-deal {
     @apply py-3 px-8 bg-yellow-400 text-green-900 font-bold rounded-lg text-xl hover:bg-yellow-300 transition;
   }
+  /* New game button variant that complements btn-deal but is slightly more subtle */
+  .btn-new {
+    @apply shadow-lg ring-1 ring-yellow-200/40;
+  }
   .btn-action {
     @apply py-2 px-6 font-bold rounded-lg text-lg transition;
   }

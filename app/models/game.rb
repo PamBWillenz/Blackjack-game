@@ -13,9 +13,13 @@ class Game < ApplicationRecord
 
 		# Deals two cards to each player and the dealer
 		def deal_initial_cards
+			Rails.logger.debug "[deal_initial_cards] starting initial deal for game=#{id}, deck_size=#{deck.try(:size)}"
+			# Do not deal if the round is already over
+			return if game_over?
 			# Run the entire initial deal inside a DB row lock so multiple requests
 			# can't interleave draws and produce inconsistent deals.
 			with_lock do
+				Rails.logger.debug "[dealer_play] starting dealer_play for game=#{id}, deck_size=#{deck.try(:size)}"
 				# Ensure a persisted deck exists; work on a local copy to avoid
 				# repeatedly locking inside draw_card!
 				initialize_deck! unless deck.present? && deck.any?
@@ -34,32 +38,54 @@ class Game < ApplicationRecord
 				cards.create!(suit: card_data['suit'], rank: card_data['rank'], value: nil, player: dealer, face_up: false)
 				# Persist the shortened deck once
 				update!(deck: local_deck)
+				Rails.logger.debug "[deal_initial_cards] finished initial deal for game=#{id}, remaining=#{local_deck.size}"
 			end
 		end
 
 		# Automates dealer's play: reveal face-down card, hit until hand value >= 17, then stand
 			def dealer_play
-				dealer = dealer()
-				# Reveal dealer's face-down card
-				dealer.cards.where(face_up: false).update_all(face_up: true)
-				# Dealer hits until hand value >= 17, gets blackjack, or busts
-				# Safety: prevent infinite loops by limiting iterations and handling empty deck
-				max_iterations = 100
-				iterations = 0
-				while dealer.hand_value < 17 && !bust?(dealer) && !blackjack?(dealer) && iterations < max_iterations
-					break if remaining_deck.empty?
-					hit(dealer, face_up: true)
-					iterations += 1
+				dealer_player = dealer
+				return unless dealer_player
+				# Idempotent guard: if dealer already finished, do nothing
+				return if dealer_player.standing? || blackjack?(dealer_player) || bust?(dealer_player)
+				with_lock do
+					# Reveal dealer's face-down card
+					dealer_player.cards.where(face_up: false).update_all(face_up: true)
+					# Dealer hits until hand value >= 17, gets blackjack, or busts
+					max_iterations = 100
+					iterations = 0
+					while dealer_player.hand_value < 17 && !blackjack?(dealer_player) && iterations < max_iterations
+						Rails.logger.debug "[dealer_play] iteration=#{iterations} dealer_value=#{dealer_player.hand_value} deck_size=#{deck.try(:size)}"
+						# If persisted deck has cards, draw from it directly to avoid nested locks
+						card_data = nil
+						if deck.present?
+							card_data = deck.shift
+							# persist shortened deck
+							update!(deck: deck)
+						else
+							# Fallback: compute remaining_deck (legacy) and draw from it
+							rem = remaining_deck
+							break if rem.empty?
+							card_data = rem.shift
+						end
+						break unless card_data
+						cards.create!(suit: card_data['suit'], rank: card_data['rank'], value: nil, player: dealer_player, face_up: true)
+						# Ensure dealer_player sees the newly created card for hand_value/bust?
+						dealer_player.cards.reload
+						iterations += 1
+						# Stop immediately if dealer busted after the hit
+						break if bust?(dealer_player)
+					end
+					# Only mark standing if dealer isn't already standing
+					stand(dealer_player) unless dealer_player.standing?
 				end
-				# Only mark standing if dealer isn't already standing
-				stand(dealer) unless dealer.standing?
 			end
 
 	# Deals one card to the specified player
 		def hit(player, face_up: true)
 			# Draw a card from the persisted deck with locking to avoid races
 			card_data = draw_card!
-			return unless card_data
+			return nil unless card_data
 			cards.create!(suit: card_data['suit'], rank: card_data['rank'], value: nil, player: player, face_up: face_up)
 		end
 
@@ -75,6 +101,7 @@ class Game < ApplicationRecord
 
 	# Initialize and persist a shuffled deck for this game
 	def initialize_deck!(shuffle: true)
+		Rails.logger.debug "[initialize_deck!] initializing deck for game=#{id}"
 		initial = SUITS.product(RANKS).map { |suit, rank| { 'suit' => suit, 'rank' => rank } }
 		initial.shuffle! if shuffle
 		update!(deck: initial)
@@ -84,10 +111,17 @@ class Game < ApplicationRecord
 	# Atomically draw the next card from the persisted deck and persist the shortened deck
 	def draw_card!
 		with_lock do
-			initialize_deck! unless deck.present? && deck.any?
-			return nil if deck.blank?
+			# Only auto-initialize the deck if it doesn't exist at all. If the
+			# deck is present but empty, we should not reshuffle mid-hand — that
+			# can lead to accidentally drawing many cards when dealer_play runs.
+			initialize_deck! if deck.nil?
+			if deck.blank?
+				Rails.logger.debug "[draw_card!] deck blank for game=#{id}"
+				return nil
+			end
 			card = deck.shift
 			update!(deck: deck)
+			Rails.logger.debug "[draw_card!] game=#{id} drew #{card.inspect}, remaining=#{deck.size}"
 			card
 		end
 	end
@@ -95,6 +129,11 @@ class Game < ApplicationRecord
 	# Convenience helper to get the dealer player
 	def dealer
 		players.find_by(is_dealer: true)
+	end
+
+	# Returns true if all non-dealer players have either stood or busted
+	def players_done?
+		players.where(is_dealer: false).all? { |p| p.standing || bust?(p) }
 	end
 
   	# Returns true if the player's hand value exceeds 21
@@ -132,6 +171,14 @@ class Game < ApplicationRecord
 	def tie?(player)
 		dealer = players.find_by(is_dealer: true)
 		!bust?(player) && !bust?(dealer) && player.hand_value == dealer.hand_value
+	end
+
+	# Returns true when the round is finished: all non-dealer players are done and dealer is standing or busted
+	def game_over?
+		non_dealers_done = players.where(is_dealer: false).all? { |p| p.standing || bust?(p) }
+		dealer = players.find_by(is_dealer: true)
+		dealer_done = dealer.nil? || dealer.standing || bust?(dealer)
+		non_dealers_done && dealer_done
 	end
 
 	private

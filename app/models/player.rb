@@ -16,4 +16,18 @@ class Player < ApplicationRecord
     end
     total
   end
+
+  # Calculates the total value of only face-up cards (used for dealer display before players finish)
+  def visible_hand_value
+    visible_cards = cards.select { |card| card.face_up }
+    values = visible_cards.map(&:blackjack_value)
+    total = values.sum
+    aces = visible_cards.select { |card| card.rank == 'A' }.count
+
+    while total > 21 && aces > 0
+      total -= 10
+      aces -= 1
+    end
+    total
+  end
 end

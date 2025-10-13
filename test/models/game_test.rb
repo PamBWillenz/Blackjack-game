@@ -26,11 +26,11 @@ class GameTest < ActiveSupport::TestCase
     52.times { g.draw_card! }
     g.reload
     assert_equal 0, g.deck.size
-    # next draw should reshuffle and return a card
+    # draw_card! no longer auto-reshuffles mid-hand; next draw should return nil
     card = g.draw_card!
-    assert card.present?
+    assert_nil card
     g.reload
-    assert_equal 51, g.deck.size
+    assert_equal 0, g.deck.size
   end
 
   test "deal_initial_cards gives correct cards to players and dealer" do
@@ -53,5 +53,27 @@ class GameTest < ActiveSupport::TestCase
     # dealer should have 1 face_up and 1 face_down
     assert_equal 1, dealer.cards.where(face_up: true).count
     assert_equal 1, dealer.cards.where(face_up: false).count
+  end
+
+  test "dealer_play stops after bust and deck decreases" do
+    g = Game.create!
+    dealer = g.players.create!(name: 'Dealer', is_dealer: true)
+    player = g.players.create!(name: 'Player 1', is_dealer: false)
+
+    g.initialize_deck!
+    g.deal_initial_cards
+
+    # force player to stand so dealer_play runs
+    player.update!(standing: true)
+
+    initial_deck_size = g.deck.size
+    g.dealer_play
+    g.reload
+
+    # Dealer should have at least one more card and deck must have decreased
+    assert_operator dealer.cards.count, :>, 1
+    assert_operator g.deck.size, :<, initial_deck_size
+    # Dealer hand value should be <= 21 or dealer is busted (loop stopped)
+    assert dealer.hand_value >= 17 || dealer.hand_value > 21
   end
 end

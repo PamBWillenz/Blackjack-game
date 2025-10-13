@@ -1,0 +1,8 @@
+<div id="<%= dom_id(player, :bet) %>">
+  <p class="player-name-label">Bet: <strong><%= player.bet %></strong></p>
+  <div class="bet-chips-container">
+    <% [5,10,25,50,100].each do |amt| %>
+    <%= button_to amt, bet_player_path(player, amount: amt), method: :post, form: { data: { turbo: true } }, class: "chip" %>
+    <% end %>
+  </div>
+</div>

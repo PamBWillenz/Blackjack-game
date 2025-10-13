@@ -7,20 +7,33 @@
     <% @game.players.where(is_dealer: false).each do |player| %>
     <div class="player-bet-container">
       <span class="player-name-label"><%= player.name %></span>
-      <div class="bet-chips-container">
-        <% [5, 10, 25, 50, 100].each do |amount| %>
-        <%= button_to amount, '#', method: :get, class: "chip" %>
-        <% end %>
-      </div>
+      <%= turbo_frame_tag dom_id(player, :bet) do %>
+      <%= render partial: 'players/player_bet', locals: { player: player } %>
+      <% end %>
     </div>
     <% end %>
+    <%# Show Deal Cards button when the game has no cards (start the round) %>
+    <%# Only allow dealing when every non-dealer has placed a bet (> 0) and there are no cards dealt yet %>
+    <% if @game.cards.empty? && @game.players.where(is_dealer: false).all? { |p| p.bet.to_i > 0 } %>
     <div class="deal-btn-container">
       <%= button_to "Deal Cards", deal_game_path(@game), method: :post, class: "btn-deal" %>
     </div>
+    <% end %>
+
+    <%# Show New Game button only when the round is over %>
+    <% if @game.game_over? %>
+    <div class="new-game-btn-container" style="margin-top:8px;">
+      <%= button_to "New Game", new_game_path, method: :get, class: "btn-deal btn-new" %>
+    </div>
+    <% end %>
   </div>
 
   <% if @game.cards.any? %>
-  <% @game.players.each do |player| %>
+  <%# Render non-dealer players first, then dealer last to avoid swapping positions in the UI %>
+  <% non_dealers = @game.players.where(is_dealer: false).to_a %>
+  <% dealer_player = @game.players.find_by(is_dealer: true) %>
+  <% ordered_players = non_dealers + [dealer_player].compact %>
+  <% ordered_players.each do |player| %>
   <div class="player-card">
     <h2 class="player-name"><%= player.is_dealer ? "Dealer" : player.name %></h2>
     <div class="player-cards-container">
@@ -40,14 +53,23 @@
       <% end %>
     </div>
 
-    <p class="hand-value">Hand Value: <span class="hand-value-number"><%= player.hand_value %></span></p>
-
     <% if player.is_dealer %>
+    <%# Show only visible dealer hand value until all players are done %>
+    <% if @game.players_done? %>
+    <p class="hand-value">Hand Value: <span class="hand-value-number"><%= player.hand_value %></span></p>
+    <% if @game.game_over? %>
     <% if @game.dealer_winner? %>
     <span class="winner-badge">Winner!</span>
+    <% elsif @game.bust?(player) %>
+    <span class="bust">Bust!</span>
+    <% end %>
     <% end %>
     <% else %>
-    <% if player.standing || @game.bust?(player) %>
+    <p class="hand-value">Hand Value: <span class="hand-value-number"><%= player.visible_hand_value %></span> (visible)</p>
+    <% end %>
+    <% else %>
+    <p class="hand-value">Hand Value: <span class="hand-value-number"><%= player.hand_value %></span></p>
+    <% if @game.game_over? && (player.standing || @game.bust?(player)) %>
     <% if @game.winner?(player) %>
     <span class="winner-badge">Winner!</span>
     <% elsif @game.tie?(player) %>
@@ -58,15 +80,15 @@
     <% end %>
     <% end %>
 
-    <% if @game.bust?(player) %>
-    <p class="bust">Bust!</p>
-    <% end %>
-    <% unless player.is_dealer || player.standing %>
-    <div class="player-action-btns">
+    <%# duplicate Bust display removed; badges are handled above per-player %>
+    <div class="player-action-btns" style="min-height:48px; display:flex; align-items:center; gap:8px;">
+      <% if !player.is_dealer && !player.standing %>
       <%= button_to "Hit", hit_game_path(@game, player_id: player.id), method: :post, class: "btn-action btn-hit" %>
       <%= button_to "Stand", stand_game_path(@game, player_id: player.id), method: :post, class: "btn-action btn-stand" %>
+      <% else %>
+      &nbsp;
+      <% end %>
     </div>
-    <% end %>
   </div>
   <% end %>
   <% end %>
