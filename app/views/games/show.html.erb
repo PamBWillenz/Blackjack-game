@@ -39,7 +39,25 @@
       <% end %>
       <% end %>
     </div>
+
     <p class="hand-value">Hand Value: <span class="hand-value-number"><%= player.hand_value %></span></p>
+
+    <% if player.is_dealer %>
+    <% if @game.dealer_winner? %>
+    <span class="winner-badge">Winner!</span>
+    <% end %>
+    <% else %>
+    <% if player.standing || @game.bust?(player) %>
+    <% if @game.winner?(player) %>
+    <span class="winner-badge">Winner!</span>
+    <% elsif @game.tie?(player) %>
+    <span class="tie-badge">Tie!</span>
+    <% elsif @game.bust?(player) %>
+    <span class="bust">Bust!</span>
+    <% end %>
+    <% end %>
+    <% end %>
+
     <% if @game.bust?(player) %>
     <p class="bust">Bust!</p>
     <% end %>
