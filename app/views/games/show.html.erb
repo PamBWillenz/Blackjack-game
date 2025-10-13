@@ -12,12 +12,13 @@
       <% end %>
     </div>
     <% end %>
-    <%# Show Deal Cards button when the game has no cards (start the round) %>
-    <%# Only allow dealing when every non-dealer has placed a bet (> 0) and there are no cards dealt yet %>
-    <% if @game.cards.empty? && @game.players.where(is_dealer: false).all? { |p| p.bet.to_i > 0 } %>
-    <div class="deal-btn-container">
-      <%= button_to "Deal Cards", deal_game_path(@game), method: :post, class: "btn-deal" %>
-    </div>
+    <%# Show Deal Cards button when the game has no cards (start the round).
+        The button is visible so users can start the round, but it's disabled until
+        every non-dealer player has placed a bet. %>
+    <% if @game.cards.empty? %>
+    <%= turbo_frame_tag dom_id(@game, :deal_button) do %>
+    <%= render partial: 'games/deal_button', locals: { game: @game } %>
+    <% end %>
     <% end %>
 
     <%# Show New Game button only when the round is over %>
