@@ -13,6 +13,7 @@ Rails.application.routes.draw do
       post :deal
       post :hit
       post :stand
+      post :new_round
     end
   end
     resources :players, only: [] do

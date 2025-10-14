@@ -23,7 +23,7 @@
     <%# Show New Game button only when the round is over %>
     <% if @game.game_over? %>
     <div class="new-game-btn-container">
-      <%= button_to "New Game", new_game_path, method: :get, class: "btn-deal btn-new" %>
+      <button data-controller="new-round" data-new-round-game-id-value="<%= @game.id %>" data-action="click->new-round#startNewRound" class="btn-deal btn-new">New Game</button>
     </div>
     <% end %>
   </div>

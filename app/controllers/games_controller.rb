@@ -53,6 +53,17 @@ class GamesController < ApplicationController
 				# Only trigger dealer_play if the game hasn't already been completed
 				@game.dealer_play unless @game.game_over?
 			end
+
+			def new_round
+				@game = Game.find(params[:id])
+				# destroy existing cards and reset player standing/bets but preserve balance
+				@game.cards.destroy_all
+				@game.players.each do |p|
+					p.update!(standing: false, bet: 0)
+				end
+				# render the show partial HTML so client JS or Stimulus can replace the game container
+				render partial: 'games/show', locals: { game: @game }
+			end
 			redirect_to @game
 		end
 	private

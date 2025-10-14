@@ -3,7 +3,8 @@
 <% unmet_bets = player.nil? || player.bet.to_i == 0 %>
 <div class="deal-btn-container">
   <%= button_to "Deal Cards", deal_game_path(game), method: :post,
-      class: "btn-deal #{'opacity-50 cursor-not-allowed' if unmet_bets}",
-      disabled: unmet_bets,
-      title: (unmet_bets ? 'All players must place bets before dealing' : nil) %>
+    form: { data: { turbo: false } },
+    class: "btn-deal #{'opacity-50 cursor-not-allowed' if unmet_bets}",
+    disabled: unmet_bets,
+    title: (unmet_bets ? 'All players must place bets before dealing' : nil) %>
 </div>
