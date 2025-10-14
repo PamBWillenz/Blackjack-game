@@ -6,13 +6,9 @@ class GamesController < ApplicationController
 
 		def create
 			@game = Game.create
-			num_players = params[:game][:number_of_players].to_i
-			# Create dealer
+			# Create dealer and a single human player
 			@game.players.create!(name: "Dealer", is_dealer: true)
-			# Create players
-			num_players.times do |i|
-				@game.players.create!(name: "Player #{i+1}", is_dealer: false)
-			end
+			@game.players.create!(name: "Player 1", is_dealer: false)
 			redirect_to @game
 		end
 
@@ -47,7 +43,8 @@ class GamesController < ApplicationController
 
 		def players_done?
 			# Check if all non-dealer players are done
-			if @game.players.where(is_dealer: false).all? { |p| p.standing || @game.bust?(p) }
+			# Use the single-player helper; keep compatibility with older multi-player games
+			if @game.player_done?
 				# Only trigger dealer_play if the game hasn't already been completed
 				@game.dealer_play unless @game.game_over?
 			end

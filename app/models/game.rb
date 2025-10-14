@@ -126,16 +126,21 @@ class Game < ApplicationRecord
 		end
 	end
 
-	# Convenience helper to get the dealer player
 	def dealer
 		players.find_by(is_dealer: true)
 	end
 
-	# Returns true if all non-dealer players have either stood or busted
-	def players_done?
-		players.where(is_dealer: false).all? { |p| p.standing || bust?(p) }
+	def player
+		players.find_by(is_dealer: false) 
 	end
 
+	def player_done?
+		p = player
+		return false if p.nil?
+		p.standing || bust?(p)
+	end
+
+	
   	# Returns true if the player's hand value exceeds 21
 	def bust?(player)
 		player.hand_value > 21
@@ -173,12 +178,12 @@ class Game < ApplicationRecord
 		!bust?(player) && !bust?(dealer) && player.hand_value == dealer.hand_value
 	end
 
-	# Returns true when the round is finished: all non-dealer players are done and dealer is standing or busted
+	# Returns true when the round is finished and player is done and dealer is standing or busted
 	def game_over?
-		non_dealers_done = players.where(is_dealer: false).all? { |p| p.standing || bust?(p) }
-		dealer = players.find_by(is_dealer: true)
-		dealer_done = dealer.nil? || dealer.standing || bust?(dealer)
-		non_dealers_done && dealer_done
+		player_done = player_done?
+		dealer_player = dealer
+		dealer_done = dealer_player.nil? || dealer_player.standing || bust?(dealer_player)
+		player_done && dealer_done
 	end
 
 	private
