@@ -73,4 +73,78 @@ class GameTest < ActiveSupport::TestCase
     
     assert dealer.hand_value >= 17 || dealer.hand_value > 21
   end
+
+  test "resolve_bets! pays winners, losers, ties correctly" do
+    g = Game.create!
+    dealer = g.players.create!(name: 'Dealer', is_dealer: true)
+    p1 = g.players.create!(name: 'P1', is_dealer: false, balance: 100)
+    p2 = g.players.create!(name: 'P2', is_dealer: false, balance: 100)
+
+    # P1 will win (20 vs dealer 18)
+  g.cards.create!(suit: 'H', rank: 'K', value: nil, player: p1)
+  g.cards.create!(suit: 'D', rank: 'Q', value: nil, player: p1)
+    p1.update!(bet: 10)
+
+    # P2 ties with dealer (both 18)
+  g.cards.create!(suit: 'H', rank: 'K', value: nil, player: p2)
+  g.cards.create!(suit: 'D', rank: '8', value: nil, player: p2)
+    p2.update!(bet: 20)
+
+  g.cards.create!(suit: 'S', rank: '9', value: nil, player: dealer)
+  g.cards.create!(suit: 'C', rank: '9', value: nil, player: dealer)
+
+    g.resolve_bets!
+    p1.reload
+    p2.reload
+    assert_equal 110, p1.balance
+    assert_equal 100, p2.balance
+    assert_equal 0, p2.bet
+  end
+
+  test "resolve_bets handles dealer bust" do
+    g = Game.create!
+    dealer = g.players.create!(name: 'Dealer', is_dealer: true)
+    p = g.players.create!(name: 'P', is_dealer: false, balance: 100)
+    p.update!(bet: 25)
+    # player 18
+  g.cards.create!(suit:'H', rank:'K', value:nil, player: p)
+  g.cards.create!(suit:'D', rank:'8', value:nil, player: p)
+    # dealer busted
+  g.cards.create!(suit:'S', rank:'K', value:nil, player: dealer)
+  g.cards.create!(suit:'C', rank:'9', value:nil, player: dealer)
+  g.cards.create!(suit:'H', rank:'6', value:nil, player: dealer)
+    g.resolve_bets!
+    p.reload
+    assert_equal 125, p.balance
+  end
+
+  test "winner? and tie? work correctly" do
+    g = Game.create!
+    dealer = g.players.create!(name: 'Dealer', is_dealer: true)
+    p = g.players.create!(name: 'P', is_dealer: false)
+  g.cards.create!(suit:'H', rank:'K', player: p); g.cards.create!(suit:'D', rank:'7', player: p)
+  g.cards.create!(suit:'S', rank:'K', player: dealer); g.cards.create!(suit:'C', rank:'6', player: dealer)
+    assert g.winner?(p)
+    assert_not g.tie?(p)
+  end
+
+  test "draw_card! returns nil when deck empty" do
+    g = Game.create!
+    g.initialize_deck!
+    52.times { g.draw_card! }
+    assert_nil g.draw_card!
+  end
+
+  test "dealer_play is idempotent: calling twice shouldn't add extra cards if dealer standing" do
+    g = Game.create!
+    dealer = g.players.create!(name:'Dealer', is_dealer:true)
+    p = g.players.create!(name:'P', is_dealer:false)
+    g.initialize_deck!
+    g.deal_initial_cards
+    p.update!(standing: true)
+    g.dealer_play
+    before_count = dealer.cards.count
+    g.dealer_play
+    assert_equal before_count, dealer.cards.count
+  end
 end
