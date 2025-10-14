@@ -4,7 +4,7 @@
 
   <div id="betting-section" class="mb-8">
     <%# Show betting UI and Deal button only when no cards are present (start of round) %>
-    <% if @game.cards.empty? %>
+    <% if show_betting?(@game) %>
     <h2 id="betting-title" class="betting-title">Place Your Bet</h2>
     <% player = @game.player %>
     <div class="player-bet-container">
@@ -24,74 +24,60 @@
 
     <%# Show New Game button only when the round is over (kept outside betting UI)
         so it's available after the round completes regardless of cards presence. %>
-    <% if @game.game_over? %>
+    <% if show_new_game?(@game) %>
     <div class="new-game-btn-container">
       <button data-controller="new-round" data-new-round-game-id-value="<%= @game.id %>" data-action="click->new-round#startNewRound" class="btn-deal btn-new">New Game</button>
     </div>
     <% end %>
   </div>
 
-  <% if @game.cards.any? %>
+  <% if show_cards?(@game) %>
   <%# Single-player rendering: show player then dealer %>
-  <% player = @game.player %>
-  <% dealer_player = @game.dealer %>
-  <% ordered = [player, dealer_player].compact %>
-  <% ordered.each do |player| %>
+  <% ordered = [@game.player, @game.dealer].compact %>
+  <% ordered.each do |p| %>
   <div class="player-card">
-    <h2 class="player-name">
-      <%= player.is_dealer ? "Dealer" : player.name %>
-      <% unless player.is_dealer %>
-      <span class="player-balance">&nbsp;— Balance: $<%= player.balance %></span>
+    <h2 class="player-name"><%= p.is_dealer ? "Dealer" : p.name %>
+      <% unless p.is_dealer %>
+      <span class="player-balance">&nbsp;— Balance: $<%= p.balance %></span>
       <% end %>
     </h2>
+
     <div class="player-cards-container">
-      <% player.cards.each do |card| %>
-      <% if player.is_dealer && !card.face_up %>
-      <div class="card-back">
-        <span>🂠</span>
-      </div>
+      <% p.cards.each do |card| %>
+      <% if p.is_dealer && !card.face_up %>
+      <div class="card-back"><span>🂠</span></div>
       <% else %>
       <div class="card-front">
         <span class="card-rank"><%= card.rank %></span>
-        <span class="card-suit <%= suit_color_class(card.suit) %>">
-          <%= suit_symbol(card.suit) %>
-        </span>
+        <span class="card-suit <%= suit_color_class(card.suit) %>"><%= suit_symbol(card.suit) %></span>
       </div>
       <% end %>
       <% end %>
     </div>
 
-    <% if player.is_dealer %>
-    <%# Show only visible dealer hand value until player is done %>
-    <% if @game.player_done? %>
-    <p class="hand-value">Hand Value: <span class="hand-value-number"><%= player.hand_value %></span></p>
+    <% if p.is_dealer %>
+    <p class="hand-value">Hand Value: <span class="hand-value-number"><%= dealer_visible_value(p, @game) %></span><% if !@game.player_done? %> (visible)<% end %></p>
     <% if @game.game_over? %>
     <% if @game.dealer_winner? %>
     <span class="winner-badge">Winner!</span>
-    <% elsif @game.bust?(player) %>
+    <% elsif @game.bust?(p) %>
     <span class="bust">Bust!</span>
     <% end %>
     <% end %>
     <% else %>
-    <p class="hand-value">Hand Value: <span class="hand-value-number"><%= player.visible_hand_value %></span> (visible)</p>
-    <% end %>
-    <% else %>
-    <p class="hand-value">Hand Value: <span class="hand-value-number"><%= player.hand_value %></span></p>
-    <% if @game.game_over? && (player.standing || @game.bust?(player)) %>
-    <% if @game.winner?(player) %>
-    <span class="winner-badge">Winner!</span>
-    <% elsif @game.tie?(player) %>
-    <span class="tie-badge">Tie!</span>
-    <% elsif @game.bust?(player) %>
-    <span class="bust">Bust!</span>
+    <p class="hand-value">Hand Value: <span class="hand-value-number"><%= p.hand_value %></span></p>
+    <% if @game.game_over? && (p.standing || @game.bust?(p)) %>
+    <% badge = result_badge_for(p, @game) %>
+    <% if badge.present? %>
+    <span class="<%= badge == 'Winner!' ? 'winner-badge' : badge == 'Tie!' ? 'tie-badge' : 'bust' %>"><%= badge %></span>
     <% end %>
     <% end %>
     <% end %>
 
     <div class="player-action-btns">
-      <% if !player.is_dealer && !player.standing %>
-      <%= button_to "Hit", hit_game_path(@game, player_id: player.id), method: :post, class: "btn-action btn-hit" %>
-      <%= button_to "Stand", stand_game_path(@game, player_id: player.id), method: :post, class: "btn-action btn-stand" %>
+      <% if !p.is_dealer && !p.standing %>
+      <%= button_to "Hit", hit_game_path(@game, player_id: p.id), method: :post, class: "btn-action btn-hit" %>
+      <%= button_to "Stand", stand_game_path(@game, player_id: p.id), method: :post, class: "btn-action btn-stand" %>
       <% else %>
       &nbsp;
       <% end %>
