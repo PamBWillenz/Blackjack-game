@@ -3,6 +3,8 @@
   <p id="game-id" class="game-id">Game ID: <%= @game.id %></p>
 
   <div id="betting-section" class="mb-8">
+    <%# Show betting UI and Deal button only when no cards are present (start of round) %>
+    <% if @game.cards.empty? %>
     <h2 id="betting-title" class="betting-title">Place Your Bet</h2>
     <% player = @game.player %>
     <div class="player-bet-container">
@@ -11,16 +13,17 @@
       <%= render partial: 'players/player_bet', locals: { player: player } %>
       <% end %>
     </div>
+
     <%# Show Deal Cards button when the game has no cards (start the round).
-        The button is visible so users can start the round, but it's disabled until
-        every non-dealer player has placed a bet. %>
-    <% if @game.cards.empty? %>
+          The button is visible so users can start the round, but it's disabled until
+          every non-dealer player has placed a bet. %>
     <%= turbo_frame_tag dom_id(@game, :deal_button) do %>
     <%= render partial: 'games/deal_button', locals: { game: @game } %>
     <% end %>
     <% end %>
 
-    <%# Show New Game button only when the round is over %>
+    <%# Show New Game button only when the round is over (kept outside betting UI)
+        so it's available after the round completes regardless of cards presence. %>
     <% if @game.game_over? %>
     <div class="new-game-btn-container">
       <button data-controller="new-round" data-new-round-game-id-value="<%= @game.id %>" data-action="click->new-round#startNewRound" class="btn-deal btn-new">New Game</button>
@@ -35,7 +38,12 @@
   <% ordered = [player, dealer_player].compact %>
   <% ordered.each do |player| %>
   <div class="player-card">
-    <h2 class="player-name"><%= player.is_dealer ? "Dealer" : player.name %></h2>
+    <h2 class="player-name">
+      <%= player.is_dealer ? "Dealer" : player.name %>
+      <% unless player.is_dealer %>
+      <span class="player-balance">&nbsp;— Balance: $<%= player.balance %></span>
+      <% end %>
+    </h2>
     <div class="player-cards-container">
       <% player.cards.each do |card| %>
       <% if player.is_dealer && !card.face_up %>
