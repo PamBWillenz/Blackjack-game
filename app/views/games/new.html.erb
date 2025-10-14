@@ -1,7 +1,9 @@
-<div class="flex flex-col items-center justify-center min-h-screen bg-green-900">
-  <h1 class="text-4xl font-bold text-yellow-400 mb-8">Start a New Blackjack Game</h1>
-  <%= form_with model: @game, url: games_path, local: true, class: "w-full max-w-md bg-green-800 p-8 rounded-lg shadow-lg" do |form| %>
-  <%# Number of players selection removed - single-player app by design %>
-  <%= form.submit "Create Game", class: "w-full py-3 px-6 bg-yellow-400 text-green-900 font-bold rounded-lg text-2xl hover:bg-yellow-300 transition" %>
-  <% end %>
+<div class="root-container">
+  <h1 class="game-heading">Start a New Blackjack Game</h1>
+  <div class="game-container">
+    <%= form_with model: @game, url: games_path, local: true, class: "w-full" do |form| %>
+    <%# Number of players selection removed - single-player app by design %>
+    <%= form.submit "Create Game", class: "btn-deal w-full" %>
+    <% end %>
+  </div>
 </div>

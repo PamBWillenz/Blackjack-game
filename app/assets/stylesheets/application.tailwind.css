@@ -28,6 +28,14 @@
   .game-container {
     @apply w-full max-w-3xl mx-auto mt-8 p-4 sm:p-6 bg-green-800 rounded-lg shadow-lg;
   }
+  /* Root/new page container variant: solid black background and adjusted text */
+  .root-container {
+    @apply w-full max-w-3xl mx-auto mt-8 p-6 bg-black text-white rounded-lg shadow-xl;
+  }
+  /* When game-container is nested in root, make it blend into the black background */
+  .root-container .game-container {
+    @apply bg-transparent shadow-none p-0;
+  }
   .player-card {
     @apply mb-8 p-4 bg-green-700 rounded-lg shadow;
   }
@@ -67,8 +75,9 @@
   }
 
   .card-back {
-    @apply w-12 h-20 sm:w-16 sm:h-24 bg-gray-800 rounded-lg shadow flex items-center justify-center text-2xl font-bold text-white border-2 border-gray-600;
+    @apply w-12 h-20 sm:w-16 sm:h-24 bg-blue-600 rounded-lg shadow flex items-center justify-center text-white text-2xl font-bold border-2 border-gray-400;
   }
+
   .card-front {
     @apply w-12 h-20 sm:w-16 sm:h-24 bg-white rounded-lg shadow flex flex-col items-center justify-center text-2xl font-bold border-2 border-gray-400;
   }
