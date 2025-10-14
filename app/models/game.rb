@@ -78,6 +78,33 @@ class Game < ApplicationRecord
 					end
 					# Only mark standing if dealer isn't already standing
 					stand(dealer_player) unless dealer_player.standing?
+					# After dealer finishes, resolve bets for non-dealer players
+					resolve_bets!
+				end
+			end
+
+			# Resolve bets: pay winners, charge losers, nullify ties
+			def resolve_bets!
+				dealer_player = dealer
+				return unless dealer_player
+				players.where(is_dealer: false).each do |p|
+					next if p.bet.to_i <= 0
+					if bust?(p)
+						# player already busted -> loses bet
+						p.apply_result(-p.bet)
+					elsif bust?(dealer_player)
+						# dealer busted -> player wins equal to bet
+						p.apply_result(p.bet)
+					elsif tie?(p)
+						# tie -> no change (bet nullified)
+						p.update!(bet: 0)
+					elsif winner?(p)
+						# player wins
+						p.apply_result(p.bet)
+					else
+						# player loses
+						p.apply_result(-p.bet)
+					end
 				end
 			end
 

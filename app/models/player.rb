@@ -3,6 +3,23 @@ class Player < ApplicationRecord
   belongs_to :game
   has_many :cards, dependent: :destroy
 
+  validates :balance, numericality: { greater_than_or_equal_to: 0 }
+
+  # Place a bet for the player. Ensures bet does not exceed balance.
+  def place_bet(amount)
+    amt = amount.to_i
+    amt = 0 if amt < 0
+    amt = [amt, balance].min
+    update!(bet: amt)
+  end
+
+  # NOTE: balance default is provided by the DB migration (default: 300)
+
+  # Adjust balance by amount (positive = win, negative = loss) and reset bet
+  def apply_result(amount)
+    update!(balance: balance + amount, bet: 0)
+  end
+
   # Calculates the total value of the player's hand, treating Ace as 1 or 11
   def hand_value
     values = cards.map(&:blackjack_value)

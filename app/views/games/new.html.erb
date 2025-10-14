@@ -1,10 +1,7 @@
 <div class="flex flex-col items-center justify-center min-h-screen bg-green-900">
   <h1 class="text-4xl font-bold text-yellow-400 mb-8">Start a New Blackjack Game</h1>
   <%= form_with model: @game, url: games_path, local: true, class: "w-full max-w-md bg-green-800 p-8 rounded-lg shadow-lg" do |form| %>
-  <div class="mb-6">
-    <%= form.label :number_of_players, "Number of Players", class: "block text-lg font-semibold text-white mb-2" %>
-    <%= form.number_field :number_of_players, min: 1, max: 7, value: 1, class: "w-full px-4 py-2 rounded bg-green-700 text-white text-xl" %>
-  </div>
+  <%# Number of players selection removed - single-player app by design %>
   <%= form.submit "Create Game", class: "w-full py-3 px-6 bg-yellow-400 text-green-900 font-bold rounded-lg text-2xl hover:bg-yellow-300 transition" %>
   <% end %>
 </div>

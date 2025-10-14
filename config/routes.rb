@@ -17,5 +17,6 @@ Rails.application.routes.draw do
   end
     resources :players, only: [] do
       post :bet, on: :member
+      post :reset_balance, on: :member
     end
 end

@@ -6,9 +6,14 @@ class GamesController < ApplicationController
 
 		def create
 			@game = Game.create
-			# Create dealer and a single human player
+			# Create dealer and a single human player, preserving previous player's balance/bet if available
 			@game.players.create!(name: "Dealer", is_dealer: true)
-			@game.players.create!(name: "Player 1", is_dealer: false)
+			last_player = Player.where(is_dealer: false).order(updated_at: :desc).first
+			if last_player
+				@game.players.create!(name: "Player 1", is_dealer: false, balance: last_player.balance, bet: last_player.bet)
+			else
+				@game.players.create!(name: "Player 1", is_dealer: false)
+			end
 			redirect_to @game
 		end
 
