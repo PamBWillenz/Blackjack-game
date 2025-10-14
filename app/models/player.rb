@@ -1,7 +1,7 @@
 
 class Player < ApplicationRecord
   belongs_to :game
-  has_many :cards
+  has_many :cards, dependent: :destroy
 
   # Calculates the total value of the player's hand, treating Ace as 1 or 11
   def hand_value

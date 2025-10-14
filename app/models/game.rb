@@ -1,6 +1,6 @@
 class Game < ApplicationRecord
-	has_many :players
-	has_many :cards
+	has_many :players, dependent: :destroy
+	has_many :cards, dependent: :destroy
 
 	# When using Postgres jsonb we store `deck` as native JSON/Array.
 	# For safety, coerce legacy text JSON into an Array on initialization.
