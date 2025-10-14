@@ -19,7 +19,7 @@ class GameFlowTest < ApplicationSystemTestCase
   sleep 1.5
 
     # New Game button should be visible
-    assert_selector "form", text: "New Game"
+  assert_selector "button", text: "New Game"
 
     # Deal Cards button should NOT be present
     assert_no_text "Deal Cards"

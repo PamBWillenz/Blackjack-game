@@ -23,7 +23,7 @@ class SinglePlayerFlowTest < ApplicationSystemTestCase
     visit game_path(g)
     sleep 1.0
 
-    assert_selector "form", text: "New Game"
+  assert_selector "button", text: "New Game"
     assert_no_text "Deal Cards"
     assert_text "Bust!"
   end
@@ -44,7 +44,7 @@ class SinglePlayerFlowTest < ApplicationSystemTestCase
     visit game_path(g)
     sleep 1.0
 
-    assert_selector "form", text: "New Game"
+  assert_selector "button", text: "New Game"
     assert_no_text "Deal Cards"
     assert (has_text?("Winner!") || has_text?("Tie!") || has_text?("Bust!")), "Expected some outcome badge"
   end
